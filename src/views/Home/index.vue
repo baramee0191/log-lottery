@@ -130,7 +130,7 @@ function init() {
 
     const detail = document.createElement('div')
     detail.className = 'card-detail'
-    detail.innerHTML = `${tableData.value[i].department}<br/>${tableData.value[i].identity}`
+    // detail.innerHTML = `${tableData.value[i].department}<br/>${tableData.value[i].identity}`
     if(isShowAvatar.value) detail.style.display = 'none'
     element.appendChild(detail)
 
