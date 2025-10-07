@@ -61,6 +61,22 @@ const luckyCardList = ref<number[]>([])
 const luckyCount = ref(10)
 const personPool = ref<IPersonConfig[]>([])
 
+// Winner modal state
+const showWinnerModal = ref(false)
+const winnerDisplayNames = ref<string[]>([])
+
+function openWinnerModal() {
+  // Include uid together with name for winner display
+  winnerDisplayNames.value = luckyTargets.value.map(p => p.uid ? `${p.uid} - ${p.name}` : p.name)
+  showWinnerModal.value = true
+  nextTick(() => {
+    // optional future animations hook
+  })
+}
+function closeWinnerModal() {
+  showWinnerModal.value = false
+}
+
 const intervalTimer = ref<any>(null)
 // 填充数据，填满七行
 function initTableData() {
@@ -116,17 +132,19 @@ function init() {
     let element = document.createElement('div')
     element.className = 'element-card'
 
-    const number = document.createElement('div')
-    number.className = 'card-id'
-    number.textContent = tableData.value[i].uid
-    if(isShowAvatar.value) number.style.display = 'none'
-    element.appendChild(number)
+  const number = document.createElement('div')
+  number.className = 'card-id'
+  // Revert: top shows name
+  number.textContent = tableData.value[i].name
+  if(isShowAvatar.value) number.style.display = 'none'
+  element.appendChild(number)
 
-    const symbol = document.createElement('div')
-    symbol.className = 'card-name'
-    symbol.textContent = tableData.value[i].name
-    if(isShowAvatar.value) symbol.className = 'card-name card-avatar-name'
-    element.appendChild(symbol)
+  const symbol = document.createElement('div')
+  symbol.className = 'card-name'
+  // Revert: main large shows uid
+  symbol.textContent = tableData.value[i].uid
+  if(isShowAvatar.value) symbol.className = 'card-name card-avatar-name'
+  element.appendChild(symbol)
 
     const detail = document.createElement('div')
     detail.className = 'card-detail'
@@ -473,6 +491,10 @@ async function stopLottery() {
       .onComplete(() => {
         canOperate.value = true
         currentStatus.value = 3
+        // After last tween completes for each winner, open modal (open only once)
+        if (index === totalLuckyCount - 1) {
+          openWinnerModal()
+        }
       })
     new TWEEN.Tween(item.rotation)
       .to({
@@ -780,9 +802,76 @@ onUnmounted(() => {
   </div>
   <StarsBackground :home-background="homeBackground" />
   <PrizeList class="absolute left-0 top-32" />
+
+  <!-- Winner Modal -->
+  <transition name="fade">
+    <div v-if="showWinnerModal" class="winner-modal-overlay">
+      <div class="winner-modal">
+        <div class="confetti-container" />
+        <div class="fireworks-container" />
+        <div class="trophy-icon">🏆</div>
+        <h2 class="modal-title">ขอแสดงความยินดี!</h2>
+        <p class="modal-subtitle">ผู้โชคดีได้แก่</p>
+        <div class="winner-names-list">
+          <!-- n already contains 'uid - name' string -->
+          <div v-for="(n, i) in winnerDisplayNames" :key="i" class="winner-name-item">{{ n }}</div>
+        </div>
+        <div class="modal-buttons">
+          <button class="btn-modal btn-primary" @click="() => { closeWinnerModal(); continueLottery() }">🎲 สุ่มต่อ</button>
+          <button class="btn-modal btn-secondary" @click="closeWinnerModal">✓ ปิด</button>
+        </div>
+      </div>
+    </div>
+  </transition>
 </template>
 
 <style scoped lang="scss">
+/* Winner Modal Styles */
+.winner-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+}
+.winner-modal {
+  position: relative;
+  width: clamp(320px, 60vw, 640px);
+  max-height: 80vh;
+  background: radial-gradient(circle at top left, #1f1f2e, #0d0d14 70%);
+  border: 2px solid rgba(255,255,255,0.12);
+  border-radius: 28px;
+  padding: 40px 32px 32px;
+  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.06);
+  color: #fff;
+  overflow: hidden;
+}
+.winner-modal:before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255,215,0,0.15), rgba(255,0,128,0.1));
+  pointer-events: none;
+}
+.trophy-icon { font-size: 54px; text-align: center; animation: float 3s ease-in-out infinite; }
+.modal-title { font-size: 2.6rem; font-weight: 700; text-align: center; margin: 8px 0 6px; letter-spacing: 1px; }
+.modal-subtitle { text-align: center; margin-bottom: 16px; opacity: 0.85; letter-spacing: .5px; }
+.winner-names-list { max-height: 260px; overflow-y: auto; padding: 12px 8px; border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; backdrop-filter: blur(4px); background: rgba(255,255,255,0.04); }
+.winner-name-item { padding: 10px 16px; margin: 6px 0; background: linear-gradient(90deg, rgba(255,215,0,0.25), rgba(255,105,180,0.22)); border-radius: 12px; font-weight: 600; letter-spacing: .75px; animation: fadeInUp .45s both; text-align: center; font-size: 1.25rem; }
+.modal-buttons { display: flex; gap: 16px; justify-content: center; margin-top: 28px; }
+.btn-modal { cursor: pointer; padding: 10px 26px; font-size: 1rem; border-radius: 999px; font-weight: 600; border: none; position: relative; overflow: hidden; }
+.btn-primary { background: linear-gradient(135deg,#ffb347,#ff5fa2); color: #121212; }
+.btn-secondary { background: #262b33; color: #eee; border: 1px solid rgba(255,255,255,0.15); }
+.btn-modal:focus { outline: 2px solid #ffc400; outline-offset: 3px; }
+.btn-primary:hover { filter: brightness(1.08); }
+.btn-secondary:hover { background: #313843; }
+@keyframes fadeInUp { from { opacity:0; transform: translate3d(0,12px,0);} to { opacity:1; transform: translate3d(0,0,0);} }
+@keyframes float { 0%,100% { transform: translateY(-6px);} 50% { transform: translateY(4px);} }
+.fade-enter-active, .fade-leave-active { transition: opacity .35s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 #menu {
     position: absolute;
     z-index: 100;

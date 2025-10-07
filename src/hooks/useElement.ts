@@ -2,25 +2,20 @@ import type { IPersonConfig } from '@/types/storeType'
 import { rgba } from '@/utils/color'
 
 export function useElementStyle(element: any, person: IPersonConfig, index: number, patternList: number[], patternColor: string, cardColor: string, cardSize: { width: number, height: number }, textSize: number, mod: 'default' | 'lucky' | 'sphere' = 'default', type: 'add' | 'change' = 'add') {
+  // Background color logic unified so lucky (final) cards look the same style as draw-time cards
   if (patternList.includes(index + 1) && mod === 'default') {
     element.style.backgroundColor = rgba(patternColor, Math.random() * 0.2 + 0.8)
   }
-  else if (mod === 'sphere' || mod === 'default') {
+  else if (mod === 'sphere' || mod === 'default' || mod === 'lucky') {
+    // Use the same randomized transparency to keep visual consistency
     element.style.backgroundColor = rgba(cardColor, Math.random() * 0.5 + 0.25)
-  }
-  else if (mod === 'lucky') {
-    element.style.backgroundColor = rgba(cardColor, 0.8)
   }
   element.style.border = `1px solid ${rgba(cardColor, 0.25)}`
   element.style.boxShadow = `0 0 12px ${rgba(cardColor, 0.5)}`
   element.style.width = `${cardSize.width}px`
   element.style.height = `${cardSize.height}px`
-  if (mod === 'lucky') {
-    element.className = 'lucky-element-card'
-  }
-  else {
-    element.className = 'element-card'
-  }
+  // Always use the same base class so styles stay identical between drawing and finished states
+  element.className = 'element-card'
   if (type === 'add') {
     element.addEventListener('mouseenter', (ev: MouseEvent) => {
       const target = ev.target as HTMLElement
@@ -33,18 +28,22 @@ export function useElementStyle(element: any, person: IPersonConfig, index: numb
       target.style.boxShadow = `0 0 12px ${rgba(cardColor, 0.5)}`
     })
   }
-  element.children[0].style.fontSize = `${textSize * 0.5}px`
-  if (person.uid) {
-    element.children[0].textContent = person.uid
+  // Revert: top (smaller) shows name, main big line shows uid
+  element.children[0].style.fontSize = `${textSize * 0.6}px`
+  if (person.name) {
+    element.children[0].textContent = person.name
   }
 
-  element.children[1].style.fontSize = `${textSize}px`
-  element.children[1].style.lineHeight = `${textSize * 3}px`
+  element.children[1].style.fontSize = `${textSize * 1.3}px`
+  element.children[1].style.lineHeight = `${textSize * 3.2}px`
   element.children[1].style.textShadow = `0 0 12px ${rgba(cardColor, 0.95)}`
-  if (person.name) {
-    element.children[1].textContent = person.name
+  if (person.uid) {
+    element.children[1].textContent = person.uid
   }
-  element.children[2].style.fontSize = `${textSize * 0.5}px`
+  element.children[1].style.maxWidth = '100%'
+  element.children[1].style.overflow = 'hidden'
+  element.children[1].style.textOverflow = 'ellipsis'
+  element.children[2].style.fontSize = `${textSize * 0.55}px`
   if (person.department || person.identity) {
     element.children[2].innerHTML = `${person.department ? person.department : ''}<br/>${person.identity ? person.identity : ''}`
   }

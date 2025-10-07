@@ -17,6 +17,24 @@ interface MemberInfo { memberCode: string; prefix?: string; firstName?: string; 
 interface MemberRecord extends Partial<MemberInfo> { memberCode: string; memberInfo?: MemberInfo; prefix?: string; firstName?: string; lastName?: string }
 interface Row { uid: string; name: string }
 
+// Pools for random name generation (simple mock Thai-like names)
+const PREFIXES = ['นาย', 'นางสาว', 'นาง', 'Mr.', 'Ms.']
+const FIRST_PARTS = ['กิตติ', 'สุริ', 'พงษ์', 'ศักดิ์', 'ชล', 'ธนา', 'อาท', 'ปรีชา', 'วร', 'นพ']
+const SECOND_PARTS = ['พัฒน์', 'ชัย', 'ดนัย', 'ศรี', 'วัฒน์', 'กุล', 'พล', 'ทรัพย์', 'ภัทร', 'วรรณ']
+
+function generateUid(index: number, total: number): string {
+  // Generate zero-padded UID with prefix R (Random)
+  const digits = Math.max(4, String(total).length)
+  return 'R' + String(index + 1).padStart(digits, '0')
+}
+
+function generateRandomThaiName(): string {
+  const prefix = PREFIXES[Math.floor(Math.random() * PREFIXES.length)]
+  const first = FIRST_PARTS[Math.floor(Math.random() * FIRST_PARTS.length)] + SECOND_PARTS[Math.floor(Math.random() * SECOND_PARTS.length)]
+  const last = FIRST_PARTS[Math.floor(Math.random() * FIRST_PARTS.length)] + SECOND_PARTS[Math.floor(Math.random() * SECOND_PARTS.length)]
+  return `${prefix} ${first} ${last}`
+}
+
 function toRow(m: MemberRecord): Row {
   const info = m.memberInfo || ({} as MemberInfo)
   const uid = info.memberCode || m.memberCode || ''
@@ -31,7 +49,14 @@ async function main() {
     console.error('Unexpected API response (not array)')
     process.exit(1)
   }
-  const rows = data.map(toRow)
+  const baseRows = data.map(toRow)
+  const randomCount = parseInt(process.env.RANDOM_COUNT || '500', 10)
+  const randomRows: Row[] = Array.from({ length: randomCount }, (_, i) => {
+    const uid = generateUid(i, randomCount)
+    const name = generateRandomThaiName()
+    return { uid, name }
+  })
+  const rows = [...baseRows, ...randomRows]
   const ws = XLSX.utils.json_to_sheet(rows)
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, ws, 'UID_NAME')
