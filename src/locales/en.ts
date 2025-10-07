@@ -120,7 +120,7 @@ export default {
     notImage: 'Not Image',
     personIsAllDone: 'All Person Is Done',
     personNotEnough: 'Person Is Not Enough',
-    startDraw: 'Now Draw {count} {leftover} people',
+    startDraw: 'เริ่มสุ่มรางวัล {count} {leftover} คน',
     completeInformation: 'Please provide complete information',
   },
   placeHolder: {
