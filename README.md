@@ -168,6 +168,84 @@ docker run -d -p 9279:80 log-lottery
 
 容器运行成功后即可在本地通过<http://localhost:9279/log-lottery/>访问
 
+## 成员数据导出 (Members XLSX Export)
+
+在 `ximport` 目录下新增了脚本，用于从远程接口获取会员数据并导出为 Excel，方便批量导入或备份。
+
+脚本位置：`ximport/members-export.ts`
+
+默认接口：
+```
+https://devdata-gxd7b0aub3eufaf8.southeastasia-01.azurewebsites.net/api/fin-app/members
+```
+
+### 运行步骤
+
+1. 安装依赖 (若尚未安装)
+```
+pnpm install
+```
+2. 执行导出
+```
+pnpm run export:members
+```
+3. 导出结果文件生成于：`ximport/output/` 目录，文件名格式：`members-YYYYMMDD-HHmmss.xlsx`
+
+### 自定义接口地址
+
+可通过环境变量 `MEMBERS_API_URL` 覆盖默认地址：
+```
+# Windows PowerShell
+$Env:MEMBERS_API_URL="https://your-api/members"; pnpm run export:members
+```
+
+### 字段说明 (当前导出列)
+
+MemberCode, Prefix, FirstName, LastName, FullName, PID, Gender, BirthDate, MemberSince, Department, EmploymentType, JobPosition, CollectionStatus, CollectionType, Married, PhoneNumber, Salary, MonthlyShare, ShareCapital, AccumulatedInterest, BankAccount, BeginningShare, SharePaymentCount, Address, CoopName, ExportDate
+
+如需增加嵌套字段（如贷款合约、股金明细等），可在 `members-export.ts` 中扩展 `flattenMember` 函数。
+
+### 简化导出 (只含 Number, Name, Department)
+
+如果只需要最小字段集合，可使用简化脚本：
+
+脚本位置：`ximport/members-export-simple.ts`
+
+运行：
+```
+pnpm run export:members:simple
+```
+
+生成文件：`ximport/output/members-simple-YYYYMMDD-HHmmss.xlsx`
+
+列说明：
+```
+Number    => memberInfo.memberCode || memberCode
+Name      => prefix + firstName + lastName (自动去掉空值)
+Department=> memberInfo.department || ''
+```
+不包含 avatar / Identity（按需求说明未映射）。
+
+### 最小导出 (仅 uid, name)
+
+若只需要：`uid = memberCode`，`name = 姓名拼接`，可使用：
+
+脚本位置：`ximport/members-export-uid-name.ts`
+
+运行：
+```
+pnpm run export:members:uidname
+```
+
+生成：`ximport/output/members-uid-name-YYYYMMDD-HHmmss.xlsx`
+
+列说明：
+```
+uid  => memberInfo.memberCode || memberCode
+name => prefix + firstName + lastName （自动过滤空值，空格分隔）
+```
+
+
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=LOG1997/log-lottery&type=Date)](https://star-history.com/#LOG1997/log-lottery&Date)
